@@ -46,6 +46,7 @@
  - Added `FocusNode` on the game widget and improved keyboard handling in the game.
  - `Game` is now a `Component`
  - `ComponentEffect` is now a `Component`
+ - `HasGameRef` can now operate independently from `Game`
 
 ## [1.0.0-releasecandidate.13]
  - Fix camera not ending up in the correct position on long jumps
