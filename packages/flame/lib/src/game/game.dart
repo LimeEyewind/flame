@@ -81,9 +81,9 @@ abstract class Game extends Component implements Projector {
   /// Use for calculating the FPS.
   void onTimingsCallback(List<FrameTiming> timings) {}
 
-  /// Marks game as not attached tto any widget tree.
+  /// Marks game as not attached to any widget tree.
   ///
-  /// Should be called manually.
+  /// Should not be called manually.
   void attach(PipelineOwner owner, GameRenderBox gameRenderBox) {
     if (isAttached) {
       throw UnsupportedError('''
@@ -92,14 +92,15 @@ abstract class Game extends Component implements Projector {
       ''');
     }
     _gameRenderBox = gameRenderBox;
+    print('attach');
     onAttach();
   }
 
-  // Called when the Game widget is attached
+  /// Called when the Game widget is attached.
   @mustCallSuper
   void onAttach() {}
 
-  /// Marks game as not attached tto any widget tree.
+  /// Marks game as not attached to any widget tree.
   ///
   /// Should not be called manually.
   void detach() {
@@ -108,7 +109,7 @@ abstract class Game extends Component implements Projector {
     onDetach();
   }
 
-  // Called when the Game widget is detached
+  /// Called when the Game widget is detached.
   @mustCallSuper
   void onDetach() {
     images.clearCache();
