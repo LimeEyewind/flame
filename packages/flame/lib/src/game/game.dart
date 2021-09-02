@@ -92,7 +92,6 @@ abstract class Game extends Component implements Projector {
       ''');
     }
     _gameRenderBox = gameRenderBox;
-    print('attach');
     onAttach();
   }
 
