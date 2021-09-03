@@ -58,9 +58,7 @@ class FlareAnimation {
 
       final ActorAnimation animation = _artboard.getAnimation(_animationName);
       if (animation != null) {
-        _animationLayers.add(FlareAnimationLayer()
-          ..name = _animationName
-          ..animation = animation
+        _animationLayers.add(FlareAnimationLayer(_animationName, animation)
           ..mix = 1.0
           ..mixSeconds = 0.2);
         animation.apply(0.0, _artboard, 1.0);

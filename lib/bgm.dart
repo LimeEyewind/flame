@@ -47,7 +47,7 @@ class Bgm extends WidgetsBindingObserver {
   Future<void> play(String filename, {double volume}) async {
     volume ??= 1;
 
-    if (audioPlayer != null && audioPlayer.state != AudioPlayerState.STOPPED) {
+    if (audioPlayer != null && audioPlayer.state != PlayerState.STOPPED) {
       audioPlayer.stop();
     }
 
@@ -108,7 +108,7 @@ class Bgm extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (isPlaying && audioPlayer?.state == AudioPlayerState.PAUSED) {
+      if (isPlaying && audioPlayer?.state == PlayerState.PAUSED) {
         audioPlayer.resume();
       }
     } else {

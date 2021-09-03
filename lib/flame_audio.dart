@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
@@ -44,7 +43,7 @@ class FlameAudio {
       _warnWebFecthing();
       return null;
     }
-    return audioCache.load(file);
+    return audioCache.loadAsFile(file);
   }
 
   /// Prefetch a list of audios in the cache
@@ -53,21 +52,21 @@ class FlameAudio {
       _warnWebFecthing();
       return null;
     }
-    return audioCache.loadAll(files);
+    return Future.wait(files.map(audioCache.loadAsFile));
   }
 
   /// Clears the file in the cache
-  void clear(String file) {
-    audioCache.clear(file);
+  void clear(Uri fileName) {
+    audioCache.clear(fileName);
   }
 
   /// Clears all the audios in the cache
   void clearAll() {
-    audioCache.clearCache();
+    audioCache.clearAll();
   }
 
   /// Disables audio related logs
   void disableLog() {
-    audioCache.disableLog();
+    // audioCache.disableLog();
   }
 }
