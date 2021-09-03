@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Handles flame audio functions
 class FlameAudio {
@@ -56,8 +57,8 @@ class FlameAudio {
   }
 
   /// Clears the file in the cache
-  void clear(Uri fileName) {
-    audioCache.clear(fileName);
+  void clear(String fileName) {
+    _clear(fileName);
   }
 
   /// Clears all the audios in the cache
@@ -68,5 +69,10 @@ class FlameAudio {
   /// Disables audio related logs
   void disableLog() {
     // audioCache.disableLog();
+  }
+
+  void _clear(String fileName) async {
+    final file = File('${(await getTemporaryDirectory()).path}/$fileName');
+    await audioCache.clear(file.uri);
   }
 }
