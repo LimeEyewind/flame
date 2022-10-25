@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
 
-import 'flame.dart';
+//ignore_for_file: invalid_null_aware_operator
 
+/// {@template _bgm}
 /// The looping background music class.
 ///
 /// This class helps with looping background music management that reacts to
@@ -12,10 +11,20 @@ import 'flame.dart';
 /// as an observer to the [WidgetsBinding] instance. A [dispose] function is
 /// provided in case this functionality needs to be unloaded but the app needs
 /// to keep running.
+/// {@endtemplate}
 class Bgm extends WidgetsBindingObserver {
   bool _isRegistered = false;
+
+  /// The [AudioPlayer] instance that is used to play the audio.
   AudioPlayer audioPlayer;
+
+  /// Whether [Bgm] is playing or not.
   bool isPlaying = false;
+
+  /// {@macro _bgm}
+  Bgm({AudioCache audioCache})
+      : audioPlayer = AudioPlayer()
+    ..audioCache = audioCache ?? AudioCache.instance;
 
   /// Registers a [WidgetsBinding] observer.
   ///
@@ -25,80 +34,53 @@ class Bgm extends WidgetsBindingObserver {
       return;
     }
     _isRegistered = true;
-    WidgetsBinding.instance.addObserver(this);
+    _ambiguate(WidgetsBinding.instance)?.addObserver(this);
   }
 
   /// Dispose the [WidgetsBinding] observer.
   void dispose() {
+    audioPlayer.dispose();
     if (!_isRegistered) {
       return;
     }
-    WidgetsBinding.instance.removeObserver(this);
+    _ambiguate(WidgetsBinding.instance)?.removeObserver(this);
     _isRegistered = false;
   }
 
-  /// Plays and loops a background music file specified by [filename].
+  /// Plays and loops a background music file specified by [fileName].
   ///
   /// The volume can be specified in the optional named parameter [volume]
   /// where `0` means off and `1` means max.
   ///
   /// It is safe to call this function even when a current BGM track is
   /// playing.
-  Future<void> play(String filename, {double volume}) async {
-    volume ??= 1;
-
-    if (audioPlayer != null && audioPlayer.state != PlayerState.STOPPED) {
-      audioPlayer.stop();
-    }
-
+  Future<void> play(String fileName, {double volume = 1}) async {
+    await audioPlayer.dispose();
+    await audioPlayer.setReleaseMode(ReleaseMode.loop);
+    await audioPlayer.setVolume(volume);
+    await audioPlayer.setSource(AssetSource(fileName));
+    await audioPlayer.resume();
     isPlaying = true;
-    audioPlayer = await Flame.audio.loopLongAudio(filename, volume: volume);
   }
 
   /// Stops the currently playing background music track (if any).
   Future<void> stop() async {
     isPlaying = false;
-    if (audioPlayer != null) {
-      await audioPlayer.stop();
-    }
+    await audioPlayer.stop();
   }
 
   /// Resumes the currently played (but resumed) background music.
   Future<void> resume() async {
-    if (audioPlayer != null) {
-      isPlaying = true;
-      await audioPlayer.resume();
-    }
+    isPlaying = true;
+    await audioPlayer.resume();
   }
 
   /// Pauses the background music without unloading or resetting the audio
   /// player.
   Future<void> pause() async {
-    if (audioPlayer != null) {
-      isPlaying = false;
-      await audioPlayer.pause();
-    }
+    isPlaying = false;
+    await audioPlayer.pause();
   }
-
-  /// Pre-fetch an audio and store it in the cache.
-  ///
-  /// Alias of `FlameAudio.load();`.
-  Future<File> load(String file) => Flame.audio.load(file);
-
-  /// Pre-fetch a list of audios and store them in the cache.
-  ///
-  /// Alias of `FlameAudio.loadAll();`.
-  Future<List<File>> loadAll(List<String> files) => Flame.audio.loadAll(files);
-
-  /// Clears the file in the cache.
-  ///
-  /// Alias of `FlameAudio.clear();`.
-  void clear(String file) => Flame.audio.clear(file);
-
-  /// Clears all the audios in the cache.
-  ///
-  /// Alias of `FlameAudio.clearAll();`.
-  void clearAll() => Flame.audio.clearAll();
 
   /// Handler for AppLifecycleState changes.
   ///
@@ -108,11 +90,21 @@ class Bgm extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (isPlaying && audioPlayer?.state == PlayerState.PAUSED) {
+      if (isPlaying && audioPlayer.state == PlayerState.paused) {
         audioPlayer.resume();
       }
     } else {
-      audioPlayer?.pause();
+      audioPlayer.pause();
     }
   }
 }
+
+/// This allows a value of type T or T?
+/// to be treated as a value of type T?.
+///
+/// We use this so that APIs that have become
+/// non-nullable can still be used with `!` and `?`
+/// to support older versions of the API as well.
+///
+/// See more: https://docs.flutter.dev/development/tools/sdk/release-notes/release-notes-3.0.0
+T _ambiguate<T>(T value) => value;

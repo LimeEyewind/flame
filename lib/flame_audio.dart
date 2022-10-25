@@ -1,78 +1,94 @@
-import 'dart:io';
-
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
+import 'audio_pool.dart';
 
-/// Handles flame audio functions
+import 'bgm.dart';
+
+/// This utility class holds static references to some global audio objects.
+///
+/// You can use as a helper to very simply play a sound or a background music.
+/// Alternatively you can create your own instances and control them yourself.
 class FlameAudio {
-  AudioCache audioCache = AudioCache(prefix: 'assets/audio/');
+  /// Access a shared instance of the [AudioCache] class.
+  static AudioCache audioCache = AudioCache(prefix: 'assets/audio/');
 
-  /// Plays a single run of the given [file]
-  Future<AudioPlayer> play(String file, {volume = 1.0}) {
-    return audioCache.play(file, volume: volume, mode: PlayerMode.LOW_LATENCY);
+  static Future<AudioPlayer> _preparePlayer(
+    String file,
+    double volume,
+    ReleaseMode releaseMode,
+    PlayerMode playerMode,
+  ) async {
+    final player = AudioPlayer()..audioCache = audioCache;
+    await player.setReleaseMode(releaseMode);
+    await player.play(
+      AssetSource(file),
+      volume: volume,
+      mode: playerMode,
+    );
+    return player;
   }
 
-  /// Plays, and keep looping the given [file]
-  Future<AudioPlayer> loop(String file, {volume = 1.0}) {
-    return audioCache.loop(file, volume: volume, mode: PlayerMode.LOW_LATENCY);
+  /// Plays a single run of the given [file], with a given [volume].
+  static Future<AudioPlayer> play(String file, {double volume = 1.0}) async {
+    return _preparePlayer(
+      file,
+      volume,
+      ReleaseMode.release,
+      PlayerMode.lowLatency,
+    );
+  }
+
+  /// Plays, and keeps looping the given [file].
+  static Future<AudioPlayer> loop(String file, {double volume = 1.0}) async {
+    return _preparePlayer(
+      file,
+      volume,
+      ReleaseMode.loop,
+      PlayerMode.lowLatency,
+    );
   }
 
   /// Plays a single run of the given file [file]
   /// This method supports long audio files
-  Future<AudioPlayer> playLongAudio(String file, {volume = 1.0}) {
-    return audioCache.play(file, volume: volume);
+  static Future<AudioPlayer> playLongAudio(String file, {double volume = 1.0}) {
+    return _preparePlayer(
+      file,
+      volume,
+      ReleaseMode.release,
+      PlayerMode.mediaPlayer,
+    );
   }
 
   /// Plays, and keep looping the given [file]
   /// This method supports long audio files
   ///
-  /// NOTE: Length audio files on Android have an audio gap between loop iterations, this happens due to limitations on Android's native media player features, if you need a gapless loop, prefer the loop method
-  Future<AudioPlayer> loopLongAudio(String file, {volume = 1.0}) {
-    return audioCache.loop(file, volume: volume);
-  }
-
-  void _warnWebFecthing() {
-    print(
-      'Prefetching audio is not supported by Audiplayers on web yet, to prefetch audio on web, try using the http package to get the file and the browser will handle cache',
+  /// NOTE: Length audio files on Android have an audio gap between loop
+  /// iterations, this happens due to limitations on Android's native media
+  /// player features. If you need a gapless loop, prefer the loop method.
+  static Future<AudioPlayer> loopLongAudio(String file, {double volume = 1.0}) {
+    return _preparePlayer(
+      file,
+      volume,
+      ReleaseMode.loop,
+      PlayerMode.mediaPlayer,
     );
   }
 
-  /// Prefetch an audio in the cache
-  Future<File> load(String file) {
-    if (kIsWeb) {
-      _warnWebFecthing();
-      return null;
-    }
-    return audioCache.loadAsFile(file);
-  }
+  /// Access a shared instance of the [Bgm] class.
+  ///
+  /// This will use the same global audio cache from [FlameAudio].
+  static final Bgm bgm = Bgm(audioCache: audioCache);
 
-  /// Prefetch a list of audios in the cache
-  Future<List<File>> loadAll(List<String> files) {
-    if (kIsWeb) {
-      _warnWebFecthing();
-      return null;
-    }
-    return Future.wait(files.map(audioCache.loadAsFile));
-  }
-
-  /// Clears the file in the cache
-  void clear(String fileName) {
-    _clear(fileName);
-  }
-
-  /// Clears all the audios in the cache
-  void clearAll() {
-    audioCache.clearAll();
-  }
-
-  /// Disables audio related logs
-  void disableLog() {
-    // audioCache.disableLog();
-  }
-
-  void _clear(String fileName) async {
-    final file = File('${(await getTemporaryDirectory()).path}/$fileName');
-    await audioCache.clear(file.uri);
+  /// Creates a new Audio Pool using Flame's global Audio Cache.
+  static Future<AudioPool> createPool(
+    String sound, {
+    int minPlayers = 1,
+    int maxPlayers,
+  }) {
+    return AudioPool.create(
+      sound,
+      audioCache: audioCache,
+      minPlayers: minPlayers,
+      maxPlayers: maxPlayers,
+    );
   }
 }
